@@ -172,8 +172,7 @@
 
         // once we are done with STDIN, try to flush the buffer to the named pipe
         if (queue.active > 0) {
-           //set output buffer to block - here we wait until we can write everything to the named pipe
-           // --> this does not seem to work - just in case there is a busy loop that waits for buffer flush aswell. 
+           // set output buffer to blocking mode to ensure all buffered data is written
            int saved_flags = fcntl(writefd, F_GETFL);
            int new_flags = saved_flags & ~O_NONBLOCK;
            fcntl(writefd, F_SETFL, new_flags);

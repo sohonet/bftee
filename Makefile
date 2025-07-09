@@ -18,3 +18,7 @@ clean:
 
 deb: clean
 	dpkg-buildpackage -us -uc -Zgzip
+	# Repack with gzip compression for control.tar
+	dpkg-deb -R ../bftee_1.0-1_amd64.deb bftee_tmp
+	dpkg-deb -Zgzip -b bftee_tmp ../bftee_1.0-1_amd64.deb
+	rm -rf bftee_tmp

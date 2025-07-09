@@ -1,0 +1,22 @@
+Source: bftee
+Section: utils
+Priority: optional
+Maintainer: Andrew Walker <andrew.walker@sohonet.com>
+Build-Depends: debhelper (>= 10), gcc, libc6-dev
+Standards-Version: 4.5.0
+Homepage: https://github.com/sohonet/bftee
+
+Package: bftee
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Non-blocking tee for FIFOs
+ bftee is a clone of the standard tee command that handles FIFOs
+ (named pipes) in a non-blocking manner. Unlike regular tee, bftee
+ will not block when no reader is connected to the FIFO.
+ .
+ Features:
+  - Non-blocking FIFO writes
+  - Configurable buffer size
+  - Signal handling for statistics and graceful shutdown
+  - Automatic reconnection handling for FIFO readers
+  - Buffer flush on exit to minimize data loss

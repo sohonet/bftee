@@ -1,0 +1,54 @@
+.TH BFTEE 1 "July 2025" "bftee 1.0" "User Commands"
+.SH NAME
+bftee \- non-blocking tee for FIFOs
+.SH SYNOPSIS
+.B bftee
+.I fifo_path
+.RI [ buffer_size ]
+.SH DESCRIPTION
+.B bftee
+is a specialized version of the standard
+.B tee
+command designed to work efficiently with FIFOs (named pipes). Unlike regular
+.BR tee ,
+it won't block when the pipe reader is slow or disconnected. It reads from stdin and writes to both stdout and a named pipe, with internal buffering to handle slow readers gracefully.
+.SH OPTIONS
+.TP
+.I fifo_path
+Path to the named pipe (FIFO) to write to. The FIFO must be created before running bftee.
+.TP
+.I buffer_size
+Optional. Number of buffers to use for internal buffering (default: 4096). Each buffer is 2KB.
+.SH SIGNALS
+.TP
+.B SIGUSR1
+Display buffer statistics to stderr, including current usage, maximum usage, and drop count.
+.TP
+.B SIGTERM
+Graceful shutdown with buffer flush to minimize data loss.
+.TP
+.B SIGINT
+First signal initiates graceful shutdown, second signal forces immediate exit.
+.SH EXAMPLES
+.TP
+Create a FIFO and use bftee:
+.B mkfifo /tmp/output.fifo
+.br
+.B someprog 2>&1 | bftee /tmp/output.fifo
+.TP
+Use custom buffer size:
+.B someprog 2>&1 | bftee /tmp/output.fifo 8192
+.TP
+Check buffer statistics during runtime:
+.B kill -USR1 $(pidof bftee)
+.SH EXIT STATUS
+.B bftee
+returns 0 on success, non-zero on error.
+.SH AUTHOR
+Originally developed by racic and enhanced by fabraxias from Stack Overflow.
+.SH LICENSE
+WTFPL (Do What The Fuck You Want To Public License)
+.SH SEE ALSO
+.BR tee (1),
+.BR mkfifo (1),
+.BR fifo (7)

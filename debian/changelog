@@ -1,0 +1,8 @@
+bftee (1.0-1) unstable; urgency=low
+
+  * Initial release.
+  * Non-blocking tee for FIFOs with configurable buffer size.
+  * Signal handling for statistics and graceful shutdown.
+  * Automatic reconnection handling for FIFO readers.
+
+ -- Andrew Walker <andrew.walker@sohonet.com>  Wed, 09 Jul 2025 12:00:00 +0000

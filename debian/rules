@@ -1,0 +1,16 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	mkdir -p build
+	$(CC) $(CFLAGS) -Wall -O2 -o build/bftee bftee.c
+
+override_dh_auto_install:
+	mkdir -p debian/bftee/usr/bin
+	cp build/bftee debian/bftee/usr/bin/
+	chmod 755 debian/bftee/usr/bin/bftee
+
+override_dh_auto_clean:
+	rm -rf build

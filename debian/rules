@@ -8,9 +8,9 @@ override_dh_auto_build:
 	$(CC) $(CFLAGS) -Wall -O2 -o build/bftee bftee.c
 
 override_dh_auto_install:
-	mkdir -p debian/bftee/usr/local/bin
-	cp build/bftee debian/bftee/usr/local/bin/
-	chmod 755 debian/bftee/usr/local/bin/bftee
+	mkdir -p debian/bftee/usr/bin
+	cp build/bftee debian/bftee/usr/bin/
+	chmod 755 debian/bftee/usr/bin/bftee
 
 override_dh_auto_clean:
 	rm -rf build

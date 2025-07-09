@@ -1,3 +1,5 @@
+.PHONY: all clean deb
+
 CC = gcc
 CFLAGS = -Wall -O2
 TARGET = bftee
@@ -14,4 +16,5 @@ $(BUILD_DIR):
 clean:
 	rm -rf $(BUILD_DIR)
 
-.PHONY: all clean
+deb: clean
+	dpkg-buildpackage -us -uc

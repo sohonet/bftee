@@ -17,4 +17,4 @@ clean:
 	rm -rf $(BUILD_DIR)
 
 deb: clean
-	dpkg-buildpackage -us -uc
+	dpkg-buildpackage -us -uc -Zgzip

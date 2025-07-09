@@ -63,11 +63,32 @@
 
         /** Handle commandline args and open the pipe for non blocking writing **/
 
+        /* Check for help options */
+        if (argc == 2 && (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0)) {
+            printf("bftee - buffered, non-blocking tee for named pipes\n\n");
+            printf("Usage:\n");
+            printf("  someprog 2>&1 | %s FIFO [BufferSize]\n\n", argv[0]);
+            printf("Arguments:\n");
+            printf("  FIFO        Path to a named pipe (required)\n");
+            printf("  BufferSize  Internal buffer size when write to FIFO fails (default: %d)\n\n", BUFFER_SIZE);
+            printf("Signals:\n");
+            printf("  SIGUSR1     Print buffer statistics to stderr\n");
+            printf("  SIGTERM     Graceful shutdown with buffer flush\n");
+            printf("  SIGINT      Graceful shutdown (first signal), force exit (second signal)\n\n");
+            printf("Examples:\n");
+            printf("  mkfifo /tmp/myfifo\n");
+            printf("  ./myprogram 2>&1 | %s /tmp/myfifo\n", argv[0]);
+            printf("  ./myprogram 2>&1 | %s /tmp/myfifo 8192\n\n", argv[0]);
+            printf("See manual page or documentation for more details.\n");
+            exit(EXIT_SUCCESS);
+        }
+
         if(argc < 2 || argc > 3)
         {   
             printf("Usage:\n someprog 2>&1 | %s FIFO [BufferSize]\n"
                    "FIFO - path to a named pipe, required argument\n"
-                   "BufferSize - temporary Internal buffer size in case write to FIFO fails\n", argv[0]);
+                   "BufferSize - temporary Internal buffer size in case write to FIFO fails\n"
+                   "Use --help or -h for detailed help\n", argv[0]);
             exit(EXIT_FAILURE);
         }
 

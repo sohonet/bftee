@@ -1,10 +1,16 @@
 #!/bin/bash
 
-# Script to run tests on Linux machine
-REMOTE_HOST="10.110.10.172"
-REMOTE_USER="${1:-$USER}"  # Use provided username or current user
+# Script to run tests on remote Linux machine
+# Usage: ./run_linux_test.sh [username@hostname]
 
-echo "Testing bftee on Linux machine: $REMOTE_USER@$REMOTE_HOST"
+if [ $# -eq 0 ]; then
+    echo "Usage: $0 username@hostname"
+    echo "Example: $0 user@remote.server.com"
+    exit 1
+fi
+
+REMOTE_TARGET="$1"
+echo "Testing bftee on Linux machine: $REMOTE_TARGET"
 echo "=================================================="
 
 # Create tarball with latest code
@@ -13,11 +19,11 @@ tar czf bftee_linux_test.tar.gz bftee.c Makefile remote_test.sh
 
 # Copy to remote machine
 echo "Copying files to remote machine..."
-scp bftee_linux_test.tar.gz $REMOTE_USER@$REMOTE_HOST:/tmp/
+scp bftee_linux_test.tar.gz $REMOTE_TARGET:/tmp/
 
 # Run tests on remote machine
 echo "Running tests on remote machine..."
-ssh $REMOTE_USER@$REMOTE_HOST << 'EOF'
+ssh $REMOTE_TARGET << 'EOF'
 cd /tmp
 rm -rf bftee_test_dir
 mkdir bftee_test_dir

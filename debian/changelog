@@ -1,3 +1,12 @@
+bftee (1.1-1) unstable; urgency=medium
+
+  * Fix stdin EOF detection when upstream process terminates.
+  * Use select() with non-blocking I/O for proper pipe closure handling.
+  * Add 100ms timeout to detect closed stdin more reliably.
+  * Ensure queue is still flushed even during select timeouts.
+
+ -- Andrew Walker <andrew.walker@sohonet.com>  Sun, 11 Aug 2025 12:00:00 +0000
+
 bftee (1.0-1) unstable; urgency=low
 
   * Initial release.

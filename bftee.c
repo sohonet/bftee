@@ -12,6 +12,7 @@
     #include <errno.h>
     #include <signal.h>
     #include <unistd.h>
+    #include <sys/select.h>
 
     /* the number of sBuffers that are being held at a maximum */
     #define BUFFER_SIZE 4096
@@ -133,31 +134,64 @@
         InitQueue(&queue, bufferSize);
         quit = 0;
 
+        /* Set stdin to non-blocking mode */
+        int stdinFlags = fcntl(STDIN_FILENO, F_GETFL, 0);
+        fcntl(STDIN_FILENO, F_SETFL, stdinFlags | O_NONBLOCK);
+
         while(!quit)
         {
-            /* read from STDIN */
-            bytes = read(STDIN_FILENO, buffer.data, sizeof(buffer.data));
+            fd_set readfds;
+            struct timeval tv;
+            int selectResult;
 
-            /* if read failed due to interrupt, then retry, otherwise STDIN has closed and we should stop reading */
-            if (bytes < 0 && errno == EINTR) continue;
-            if (bytes <= 0) break;
+            /* Set up select() to wait for data on stdin with a timeout */
+            FD_ZERO(&readfds);
+            FD_SET(STDIN_FILENO, &readfds);
+            tv.tv_sec = 0;
+            tv.tv_usec = 100000; /* 100ms timeout */
 
-            /* save the number if read bytes in the current buffer to be processed */
-            buffer.bytes = bytes;
+            selectResult = select(STDIN_FILENO + 1, &readfds, NULL, NULL, &tv);
 
-            /* this is a blocking write. As long as buffer is smaller than 4096 Bytes, the write is atomic to a pipe in Linux
-               thus, this cannot be interrupted. however, to be save this should handle the error cases of partial or interrupted write none the less. */
-            bytes = write(STDOUT_FILENO, buffer.data, buffer.bytes);
-            queue.sWrites++;
-
-            if(-1==bytes) {
-                perror("ftee: writing to stdout");
+            if (selectResult < 0) {
+                if (errno == EINTR) continue;
+                perror("bftee: select()");
                 break;
+            }
+
+            /* If stdin has data available or is closed */
+            if (selectResult > 0 && FD_ISSET(STDIN_FILENO, &readfds)) {
+                /* Read from STDIN */
+                bytes = read(STDIN_FILENO, buffer.data, sizeof(buffer.data));
+
+                /* If read failed due to interrupt, then retry, otherwise STDIN has closed and we should stop reading */
+                if (bytes < 0 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK)) continue;
+                if (bytes <= 0) break;
+
+                /* Save the number of read bytes in the current buffer to be processed */
+                buffer.bytes = bytes;
+
+                /* this is a blocking write. As long as buffer is smaller than 4096 Bytes, writes are atomic to a pipe in Linux
+                   thus, this cannot be interrupted. however, to be safe this should handle the error cases of partial or interrupted write none the less. */
+                bytes = write(STDOUT_FILENO, buffer.data, buffer.bytes);
+                queue.sWrites++;
+
+                if(-1==bytes) {
+                    perror("ftee: writing to stdout");
+                    break;
+                }
+            }
+            else if (selectResult == 0) {
+                /* Timeout - no data on stdin, but we can still try to flush the queue */
+                bytes = 0; /* Set bytes to 0 to skip the stdin->pipe write below */
+            }
+            else {
+                /* No data available, continue to try flushing queue */
+                continue;
             }
 
             sBuffer *tmpBuffer = NULL;
 
-            /* if the queue is empty (tmpBuffer gets set to NULL) the this does nothing - otherwise it tries to write
+            /* if the queue is empty (tmpBuffer gets set to NULL) then this does nothing - otherwise it tries to write
                the buffered data to the pipe. This continues until the Buffer is empty or the write fails.
                NOTE: bytes cannot be -1  (that would have failed just before) when the loop is entered. */
             while ((bytes != -1) && (tmpBuffer = PeakAtQueue(&queue)) != NULL) {
@@ -178,18 +212,24 @@
             /* There are several cases here:
                1.) The Queue is empty -> bytes is still set from the write to STDOUT. in this case, we try to write the read data directly to the pipe
                2.) The Queue was not empty but is now -> bytes is set from the last write (which was successful) and is bigger 0. also try to write the data
-               3.) The Queue was not empty and still is not -> there was a write error before (even partial), and bytes is -1. Thus this line is skipped. */
-            if (bytes != -1) bytes = write(writefd, buffer.data, buffer.bytes);
+               3.) The Queue was not empty and still is not -> there was a write error before (even partial), and bytes is -1. Thus this line is skipped. 
+               4.) We got a timeout and bytes is 0 -> skip writing new data since there isn't any */
+            if (bytes > 0 && bytes != -1) bytes = write(writefd, buffer.data, buffer.bytes);
 
             /* again, there are several cases what can happen here
                1.) the write before was successful -> in this case bytes is equal to buffer.bytes and nothing happens
                2.) the write just before is partial or failed all together - bytes is either -1 or smaller than buffer.bytes -> add the remaining data to the queue
                3.) the write before did not happen as the buffer flush already had an error. In this case bytes is -1 -> add the remaining data to the queue */
-            if (bytes != buffer.bytes)
-              PushToQueue(&queue, &buffer, bytes);
-            else 
-              queue.pWrites++;
+            if (selectResult > 0 && FD_ISSET(STDIN_FILENO, &readfds)) {
+                if (bytes != buffer.bytes)
+                  PushToQueue(&queue, &buffer, bytes);
+                else 
+                  queue.pWrites++;
+            }
         }
+
+        /* Restore stdin to blocking mode */
+        fcntl(STDIN_FILENO, F_SETFL, stdinFlags);
 
         /* once we are done with STDIN, try to flush the buffer to the named pipe */
         if (queue.active > 0) {

@@ -1,7 +1,7 @@
 .PHONY: all clean deb
 
 CC = gcc
-CFLAGS = -Wall -O2
+CFLAGS = -Wall -Wextra -Werror -O2
 TARGET = bftee
 BUILD_DIR = build
 

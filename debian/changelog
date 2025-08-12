@@ -1,3 +1,18 @@
+bftee (1.0-2) unstable; urgency=low
+
+  * Non-blocking is now used when attempting to empty the queue so that a reader is
+    not required to end the `bftee` process.
+  * Code quality improvements:
+    - Fixed compiler warnings with __attribute__((unused)) for signal handlers
+    - Improved type safety using ssize_t for byte counts
+    - Added proper memory cleanup with ReleaseQueue() function
+    - Replaced atoi() with strtol() for safer integer conversion
+      - Included additional checks for long to integer conversion
+    - Consistent code formatting and indentation
+    - calloc() is now checked for NULL return.
+
+ -- Andrew Walker <andrew.walker@sohonet.com>  Tue, 12 Aug 2025 12:00:00 +0000
+
 bftee (1.0-1) unstable; urgency=low
 
   * Initial release.

@@ -38,8 +38,8 @@ int InitQueue(sQueue *, int);              /* initialises the Queue */
 void PushToQueue(sQueue *, sBuffer *, ssize_t);  /* pushes a buffer into Queue at the end */
 sBuffer *
 RetrieveFromQueue(sQueue *);       /* returns the first entry of the buffer and removes it or NULL is buffer is empty */
-sBuffer *PeakAtQueue(
-        sQueue *);             /* returns the first entry of the buffer but does not remove it. Returns NULL on an empty buffer */
+sBuffer *PeekAtQueue(
+        sQueue *queue);             /* returns the first entry of the buffer but does not remove it. Returns NULL on an empty buffer */
 void ShrinkInQueue(sQueue *queue,
                    ssize_t);    /* shrinks the first entry of the buffer by n-bytes. Buffer is removed if it is empty */
 void DelFromQueue(sQueue *queue);          /* removes the first entry of the queue */
@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
         /* if the queue is empty (tmpBuffer gets set to NULL) the this does nothing - otherwise it tries to write
            the buffered data to the pipe. This continues until the Buffer is empty or the write fails.
            NOTE: bytes cannot be -1  (that would have failed just before) when the loop is entered. */
-        while((bytes != -1) && (tmpBuffer = PeakAtQueue(&queue)) != NULL) {
+        while((bytes != -1) && (tmpBuffer = PeekAtQueue(&queue)) != NULL) {
             /* write the oldest buffer to the pipe */
             bytes = write(writefd, tmpBuffer->data, tmpBuffer->bytes);
 
@@ -205,7 +205,7 @@ int main(int argc, char *argv[]) {
     /* once we are done with STDIN, try to flush the buffer to the named pipe */
     if(queue.active > 0) {
         sBuffer *tmpBuffer = NULL;
-        while((tmpBuffer = PeakAtQueue(&queue)) != NULL) {
+        while((tmpBuffer = PeekAtQueue(&queue)) != NULL) {
             bytes = write(writefd, tmpBuffer->data, tmpBuffer->bytes);
             /* Partial write, buffer is likely full */
             if(bytes != tmpBuffer->bytes) {
@@ -289,7 +289,7 @@ sBuffer *RetrieveFromQueue(sQueue *queue) {
 }
 
 /** return the oldest entry in the Queue or NULL if the Queue is empty. Does not remove the entry **/
-sBuffer *PeakAtQueue(sQueue *queue) {
+sBuffer *PeekAtQueue(sQueue *queue) {
     if(!queue->active) { return NULL; }
     return &(queue->data[queue->start]);
 }
